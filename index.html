@@ -499,15 +499,17 @@
 
     // Additional fee displays
     const cm1=parseFee('cm1Fee'), cm2=parseFee('cm2Fee'), dirPer=parseFee('dirFee');
+    const cm1Currency=getCurrency('cm1Fee'), cm2Currency=getCurrency('cm2Fee'), dirCurrency=getCurrency('dirFee');
     const dirCount=parseInt(document.getElementById('dirCount').value)||1;
-    document.getElementById('disp-cm1').textContent = cm1?fmt(cm1):'—';
-    document.getElementById('disp-cm2').textContent = cm2?fmt(cm2):'—';
-    document.getElementById('disp-dir').textContent = dirPer?(fmt(dirPer)+' × '+dirCount+' = '+fmt(dirPer*dirCount)):'—';
+    document.getElementById('disp-cm1').textContent = cm1?fmtWithCurrency(cm1, cm1Currency):'—';
+    document.getElementById('disp-cm2').textContent = cm2?fmtWithCurrency(cm2, cm2Currency):'—';
+    document.getElementById('disp-dir').textContent = dirPer?(fmtWithCurrency(dirPer, dirCurrency)+' × '+dirCount+' = '+fmtWithCurrency(dirPer*dirCount, dirCurrency)):'—';
 
     // Hourly rates
     const hrStd=parseFee('hrStd'), hrSenior=parseFee('hrSenior');
-    document.getElementById('dispHrStd').textContent = hrStd?fmt(hrStd)+' / hour':'To be confirmed';
-    document.getElementById('dispHrSenior').textContent = hrSenior?fmt(hrSenior)+' / hour':'To be confirmed';
+    const hrStdCurrency=getCurrency('hrStd'), hrSeniorCurrency=getCurrency('hrSenior');
+    document.getElementById('dispHrStd').textContent = hrStd?fmtWithCurrency(hrStd, hrStdCurrency)+' / hour':'To be confirmed';
+    document.getElementById('dispHrSenior').textContent = hrSenior?fmtWithCurrency(hrSenior, hrSeniorCurrency)+' / hour':'To be confirmed';
 
     updateTotals();
   }
