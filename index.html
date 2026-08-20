@@ -218,8 +218,8 @@
   <div class="admin-price-row"><label>SPV Fee (per SPV setup, tax included)</label><input class="admin-price-input" id="spvFee" type="text" placeholder="e.g. USD 500 or AED 1,836" oninput="updateDisplay()" /></div>
   <div class="admin-price-row"><label>SPV Annual Fee (per SPV renewal, tax included)</label><input class="admin-price-input" id="spvRenewal" type="text" placeholder="e.g. USD 250 or AED 918" oninput="updateDisplay()" /></div>
   <div class="admin-row-label" style="margin-top:8px;">Section 1 — D4 Advisory fees (5% tax applied):</div>
-  <div class="admin-price-row"><label>D4 Advisory Fee (setup)</label><input class="admin-price-input" id="d4Fee" type="text" placeholder="e.g. USD 1,363" oninput="updateDisplay()" /></div>
-  <div class="admin-price-row"><label>D4 Annual Fee (renewal)</label><input class="admin-price-input" id="d4Renewal" type="text" placeholder="e.g. USD 500" oninput="updateDisplay()" /></div>
+  <div class="admin-price-row"><label>D4 Advisory Fee (setup)</label><input class="admin-price-input" id="d4Fee" type="text" placeholder="e.g. USD 1,363" value="AED 5000" oninput="updateDisplay()" /></div>
+  <div class="admin-price-row"><label>D4 Annual Fee (renewal)</label><input class="admin-price-input" id="d4Renewal" type="text" placeholder="e.g. USD 500" value="AED 5000" oninput="updateDisplay()" /></div>
   <div class="admin-row-label" style="margin-top:8px;">Section 2 — Additional fee amounts (client selects what they need):</div>
   <div class="admin-price-row"><label>Council Member 1</label><input class="admin-price-input" id="cm1Fee" type="text" placeholder="e.g. AED 9,000" value="AED 9,000" oninput="updateDisplay()" /></div>
   <div class="admin-price-row"><label>Council Member 2</label><input class="admin-price-input" id="cm2Fee" type="text" placeholder="e.g. AED 7,500" value="AED 7,500" oninput="updateDisplay()" /></div>
@@ -373,7 +373,7 @@
       <table class="tot-table">
         <thead><tr><th>Item</th><th style="text-align:right;">Amount</th></tr></thead>
         <tbody id="totalsBody"></tbody>
-        <tfoot><tr><td>Grand Total (excl. hourly fees)</td><td class="val" id="grandTotal">—</td></tr></tfoot>
+        <tfoot style="display:none;"><tr><td>Grand Total (excl. hourly fees)</td><td class="val" id="grandTotal">—</td></tr></tfoot>
       </table>
     </div>
     <div class="notes-block" id="notesBlock">
@@ -575,19 +575,15 @@
     </tr>`;
     if(foundFee) rows+=`<tr><td>Foundation Setup</td><td class="val">${fmtWithCurrency(foundFee, foundCurrency)}</td></tr>`;
     if(spvPer&&spvCount>0) rows+=`<tr><td>SPV Setup (${spvCount} × ${fmtWithCurrency(spvPer, spvCurrency)})</td><td class="val">${fmtWithCurrency(spvTotal, spvCurrency)}</td></tr>`;
-    if(d4Fee) rows+=`<tr><td>D4 Advisory Fee</td><td class="val">${fmtWithCurrency(d4Fee, d4Currency)}</td></tr>`;
-    if(d4Fee) rows+=`<tr><td style="padding-left:28px;color:var(--text-light);font-size:12px;">+ Tax (5%)</td><td class="val">${fmtWithCurrency(d4Tax, d4Currency)}</td></tr>`;
+    if(d4Fee) rows+=`<tr><td>D4 Advisory Fee (inc. 5% tax)</td><td class="val">${fmtWithCurrency(d4Fee+d4Tax, d4Currency)}</td></tr>`;
     if(addlState.cm1&&cm1) {
-      rows+=`<tr><td>First Council Member Setup</td><td class="val">${fmtWithCurrency(cm1, cm1Currency)}</td></tr>`;
-      rows+=`<tr><td style="padding-left:28px;color:var(--text-light);font-size:12px;">+ Tax (5%)</td><td class="val">${fmtWithCurrency(cm1*0.05, cm1Currency)}</td></tr>`;
+      rows+=`<tr><td>First Council Member Setup (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm1+(cm1*0.05), cm1Currency)}</td></tr>`;
     }
     if(addlState.cm2&&cm2) {
-      rows+=`<tr><td>Second Council Member Setup</td><td class="val">${fmtWithCurrency(cm2, cm2Currency)}</td></tr>`;
-      rows+=`<tr><td style="padding-left:28px;color:var(--text-light);font-size:12px;">+ Tax (5%)</td><td class="val">${fmtWithCurrency(cm2*0.05, cm2Currency)}</td></tr>`;
+      rows+=`<tr><td>Second Council Member Setup (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm2+(cm2*0.05), cm2Currency)}</td></tr>`;
     }
     if(addlState.dir&&dirPer) {
-      rows+=`<tr><td>Directors Setup (${dirCount} × ${fmtWithCurrency(dirPer, dirCurrency)})</td><td class="val">${fmtWithCurrency(dirPer*dirCount, dirCurrency)}</td></tr>`;
-      rows+=`<tr><td style="padding-left:28px;color:var(--text-light);font-size:12px;">+ Tax (5%)</td><td class="val">${fmtWithCurrency(dirPer*dirCount*0.05, dirCurrency)}</td></tr>`;
+      rows+=`<tr><td>Directors Setup (${dirCount} × ${fmtWithCurrency(dirPer, dirCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirPer*dirCount+(dirPer*dirCount*0.05), dirCurrency)}</td></tr>`;
     }
     if(subtotal>0) rows+=`<tr class="sub-r"><td>TOTAL ONE-TIME FEES</td><td class="val">${fmtWithCurrency(grand, foundCurrency)}</td></tr>`;
     
@@ -599,32 +595,27 @@
       </tr>`;
       if(foundRenewal) rows+=`<tr><td>Foundation Renewal</td><td class="val">${fmtWithCurrency(foundRenewal, foundRenCurrency)}</td></tr>`;
       if(spvRenPer&&spvCount>0) rows+=`<tr><td>SPV Annual Fee (${spvCount} × ${fmtWithCurrency(spvRenPer, spvRenCurrency)})</td><td class="val">${fmtWithCurrency(spvRenTotal, spvRenCurrency)}</td></tr>`;
-      if(d4Renewal) rows+=`<tr><td>D4 Annual Fee</td><td class="val">${fmtWithCurrency(d4Renewal, d4RenCurrency)}</td></tr>`;
-      if(d4Renewal) rows+=`<tr><td style="padding-left:28px;color:var(--text-light);font-size:12px;">+ Tax (5%)</td><td class="val">${fmtWithCurrency(d4RenTax, d4RenCurrency)}</td></tr>`;
+      if(d4Renewal) rows+=`<tr><td>D4 Annual Fee (inc. 5% tax)</td><td class="val">${fmtWithCurrency(d4Renewal+d4RenTax, d4RenCurrency)}</td></tr>`;
       if(addlState.cm1&&cmRen) {
-        rows+=`<tr><td>First Council Member Renewal</td><td class="val">${fmtWithCurrency(cmRen, cmRenCurrency)}</td></tr>`;
-        rows+=`<tr><td style="padding-left:28px;color:var(--text-light);font-size:12px;">+ Tax (5%)</td><td class="val">${fmtWithCurrency(cmRen*0.05, cmRenCurrency)}</td></tr>`;
+        rows+=`<tr><td>First Council Member Renewal (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cmRen+(cmRen*0.05), cmRenCurrency)}</td></tr>`;
       }
       if(addlState.cm2&&cmRen) {
-        rows+=`<tr><td>Second Council Member Renewal</td><td class="val">${fmtWithCurrency(cmRen, cmRenCurrency)}</td></tr>`;
-        rows+=`<tr><td style="padding-left:28px;color:var(--text-light);font-size:12px;">+ Tax (5%)</td><td class="val">${fmtWithCurrency(cmRen*0.05, cmRenCurrency)}</td></tr>`;
+        rows+=`<tr><td>Second Council Member Renewal (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cmRen+(cmRen*0.05), cmRenCurrency)}</td></tr>`;
       }
       if(addlState.dir&&dirRen) {
-        rows+=`<tr><td>Directors Renewal (${dirCount} × ${fmtWithCurrency(dirRen, dirRenCurrency)})</td><td class="val">${fmtWithCurrency(dirRen*dirCount, dirRenCurrency)}</td></tr>`;
-        rows+=`<tr style="color:var(--text-light);font-size:12px;"><td>Tax (5%)</td><td class="val">${fmtWithCurrency((dirRen*dirCount)*0.05, dirRenCurrency)}</td></tr>`;
+        rows+=`<tr><td>Directors Renewal (${dirCount} × ${fmtWithCurrency(dirRen, dirRenCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirRen*dirCount+(dirRen*dirCount*0.05), dirRenCurrency)}</td></tr>`;
       }
       rows+=`<tr class="sub-r"><td>TOTAL ANNUAL RENEWAL FEES</td><td class="val">${fmtWithCurrency(totalRenewal, foundRenCurrency)}</td></tr>`;
     }
 
     document.getElementById('totalsBody').innerHTML=rows||'<tr><td colspan="2" style="color:var(--text-light);font-style:italic;font-size:11px;">Fees to be confirmed by your advisor.</td></tr>';
-    document.getElementById('grandTotal').textContent=(subtotal>0)?fmt(grand):'—';
     
     // Show/hide renewal section
     if(totalRenewal>0) {
       document.getElementById('renewalTable').style.display='table';
       document.getElementById('renewalNote').style.display='block';
       document.getElementById('renewalTableBody').innerHTML=`
-        <tr style="font-weight:600;color:var(--text-dark);"><td>Annual Renewal Fee Summary</td><td class="val">${fmt(totalRenewal)}</td></tr>
+        <tr style="font-weight:600;color:var(--text-dark);"><td>Annual Renewal Fee Summary</td><td class="val">${fmtWithCurrency(totalRenewal, foundRenCurrency)}</td></tr>
         <tr style="font-size:11px;color:var(--text-light);"><td colspan="2">These fees apply each year to maintain your structure and regulatory compliance.</td></tr>
       `;
     } else {
