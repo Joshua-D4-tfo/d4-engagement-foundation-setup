@@ -583,7 +583,7 @@
     if(addlState.cm2&&cm2) {
       rows+=`<tr><td>Second Council Member Setup (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm2+(cm2*0.05), cm2Currency)}</td></tr>`;
     }
-    if(dirChecked&&dirPer) {
+    if(dirChecked) {
       rows+=`<tr><td>Directors Setup (${dirCount} × ${fmtWithCurrency(dirPer, dirCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirPer*dirCount+(dirPer*dirCount*0.05), dirCurrency)}</td></tr>`;
     }
     if(subtotal>0) rows+=`<tr class="sub-r"><td>TOTAL ONE-TIME FEES</td><td class="val">${fmtWithCurrency(grand, foundCurrency)}</td></tr>`;
@@ -603,7 +603,7 @@
       if(addlState.cm2&&cmRen) {
         rows+=`<tr><td>Second Council Member Renewal (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cmRen+(cmRen*0.05), cmRenCurrency)}</td></tr>`;
       }
-      if(dirChecked&&dirRen) {
+      if(dirChecked) {
         rows+=`<tr><td>Directors Renewal (${dirCount} × ${fmtWithCurrency(dirRen, dirRenCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirRen*dirCount+(dirRen*dirCount*0.05), dirRenCurrency)}</td></tr>`;
       }
       rows+=`<tr class="sub-r"><td>TOTAL ANNUAL RENEWAL FEES</td><td class="val">${fmtWithCurrency(totalRenewal, foundRenCurrency)}</td></tr>`;
