@@ -268,8 +268,8 @@
         <label>SPVs under foundation:</label>
         <select class="spv-select" id="spvCount" onchange="updateDisplay()">
           <option value="0">No SPVs required</option>
-          <option value="1">1 SPV</option>
-          <option value="2" selected>2 SPVs</option>
+          <option value="1" selected>1 SPV</option>
+          <option value="2">2 SPVs</option>
           <option value="3">3 SPVs</option>
           <option value="4">4 SPVs</option>
           <option value="5">5 SPVs</option>
@@ -537,11 +537,10 @@
     const cm1=parseFee('cm1Fee'), cm2=parseFee('cm2Fee'), cm1Currency=getCurrency('cm1Fee'), cm2Currency=getCurrency('cm2Fee');
     const dirPer=parseFee('dirFee'), dirCurrency=getCurrency('dirFee');
     const dirCount=parseInt(document.getElementById('dirCount').value)||1;
-    const dirChecked=document.getElementById('chk-dir')?.checked || addlState.dir;
     const cm1Total=addlState.cm1?(cm1+(cm1*0.05)):0;
     const cm2Total=addlState.cm2?(cm2+(cm2*0.05)):0;
     const dirTotal=dirPer*dirCount;
-    const dirTotalWithTax=dirChecked?(dirTotal+(dirTotal*0.05)):0;
+    const dirTotalWithTax=addlState.dir?(dirTotal+(dirTotal*0.05)):0;
     const optionalTotal=cm1Total+cm2Total+dirTotalWithTax;
     
     // Subtotal and grand total
@@ -559,11 +558,11 @@
     
     // Optional services renewal (5% tax applied - same fees as setup)
     const cmRen=parseFee('cm1Fee'), cmRenCurrency=getCurrency('cm1Fee');
-    const dirRen=parseFee('dirFee'), dirRenCurrencyency=getCurrency('dirFee');
+    const dirRen=parseFee('dirFee'), dirRenCurrency=getCurrency('dirFee');
     const cm1RenTotal=addlState.cm1?(cmRen+(cmRen*0.05)):0;
     const cm2RenTotal=addlState.cm2?(cmRen+(cmRen*0.05)):0;
     const dirRenTotal=dirRen*dirCount;
-    const dirRenTotalWithTax=dirChecked?(dirRenTotal+(dirRenTotal*0.05)):0;
+    const dirRenTotalWithTax=addlState.dir?(dirRenTotal+(dirRenTotal*0.05)):0;
     const optRenTotal=cm1RenTotal+cm2RenTotal+dirRenTotalWithTax;
     const totalRenewal=foundRenTotal+d4RenTotal+optRenTotal;
 
@@ -583,7 +582,7 @@
     if(addlState.cm2&&cm2) {
       rows+=`<tr><td>Second Council Member Setup (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm2+(cm2*0.05), cm2Currency)}</td></tr>`;
     }
-    if(dirChecked) {
+    if(addlState.dir) {
       rows+=`<tr><td>Directors Setup (${dirCount} × ${fmtWithCurrency(dirPer, dirCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirPer*dirCount+(dirPer*dirCount*0.05), dirCurrency)}</td></tr>`;
     }
     if(subtotal>0) rows+=`<tr class="sub-r"><td>TOTAL ONE-TIME FEES</td><td class="val">${fmtWithCurrency(grand, foundCurrency)}</td></tr>`;
@@ -603,7 +602,7 @@
       if(addlState.cm2&&cmRen) {
         rows+=`<tr><td>Second Council Member Renewal (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cmRen+(cmRen*0.05), cmRenCurrency)}</td></tr>`;
       }
-      if(dirChecked) {
+      if(addlState.dir) {
         rows+=`<tr><td>Directors Renewal (${dirCount} × ${fmtWithCurrency(dirRen, dirRenCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirRen*dirCount+(dirRen*dirCount*0.05), dirRenCurrency)}</td></tr>`;
       }
       rows+=`<tr class="sub-r"><td>TOTAL ANNUAL RENEWAL FEES</td><td class="val">${fmtWithCurrency(totalRenewal, foundRenCurrency)}</td></tr>`;
