@@ -390,6 +390,7 @@
       <div class="sig-party">
         <h4>Client</h4>
   
+        <div class="sig-field"><label>Client Name</label><input type="text" id="sigClientName" placeholder="Full client name" /></div>
         <div class="sig-field"><label>Email Address</label><input type="email" id="sigEmail" placeholder="your@email.com" /></div>
         <div class="sig-field"><label>Signature</label>
           <div class="sig-canvas-wrap">
@@ -695,7 +696,7 @@
   })();
 
   async function submitLetter(){
-    const clientName=''; // Client name no longer collected from form
+    const clientName=document.getElementById('sigClientName').value.trim();
     const sigName=''; // Signature name field removed
     const sigEmail=document.getElementById('sigEmail').value.trim();
     if(!document.getElementById('tc1').checked||!document.getElementById('tc2').checked||!document.getElementById('tc3').checked){showToast('Please confirm all checkboxes.');return;}
