@@ -21,12 +21,11 @@ export default async function(req, context) {
   const safeClient = clientName.replace(/[^a-zA-Z0-9]/g, '-');
   const safeDate = (signedDate || '').replace(/\s+/g, '-');
 
-  // Decode base64 HTML and strip embedded images to keep attachment small
+  // Decode base64 HTML
   let attachmentBase64 = null;
   if (engagementHTML) {
     try {
       let decoded = Buffer.from(engagementHTML, 'base64').toString('utf-8');
-      decoded = decoded.replace(/src="data:image\/[^"]+"/g, 'src=""');
       attachmentBase64 = Buffer.from(decoded, 'utf-8').toString('base64');
       console.log('Attachment size (base64 chars):', attachmentBase64.length);
     } catch(e) {
