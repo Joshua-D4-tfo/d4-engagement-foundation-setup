@@ -21,7 +21,7 @@ export default async function(req, context) {
   const safeClient = clientName.replace(/[^a-zA-Z0-9]/g, '-');
   const safeDate = (signedDate || '').replace(/\s+/g, '-');
 
-  // Decode base64 HTML
+  // Decode base64 HTML and preserve signature data URLs
   let attachmentBase64 = null;
   if (engagementHTML) {
     try {
