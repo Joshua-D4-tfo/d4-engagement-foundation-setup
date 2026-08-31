@@ -690,7 +690,7 @@
 
   async function submitLetter(){
     const clientName=document.getElementById('sigClientName').value.trim();
-    const sigName=''; // Signature name field removed
+    const sigName=clientName; // Signature name field removed
     const sigEmail=document.getElementById('sigEmail').value.trim();
     if(!document.getElementById('tc1').checked||!document.getElementById('tc2').checked||!document.getElementById('tc3').checked){showToast('Please confirm all checkboxes.');return;}
     const btn=document.getElementById('submitBtn');
