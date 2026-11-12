@@ -232,8 +232,8 @@
   <div class="admin-price-row"><label>Council Member 1</label><input class="admin-price-input" id="cm1Fee" type="text" placeholder="e.g. AED 9,000" value="AED 9,000" oninput="updateDisplay()" /></div>
   <div class="admin-price-row"><label>Council Member 2</label><input class="admin-price-input" id="cm2Fee" type="text" placeholder="e.g. AED 7,500" value="AED 7,500" oninput="updateDisplay()" /></div>
   <div class="admin-price-row"><label>Director (per director)</label><input class="admin-price-input" id="dirFee" type="text" placeholder="e.g. AED 5,000" value="AED 5000" oninput="updateDisplay()" /></div>
-  <div class="admin-price-row"><label>Bank Account (first)</label><input class="admin-price-input" id="bankFirstFee" type="text" placeholder="e.g. AED 9,000" value="AED 9,000" oninput="updateDisplay()" /></div>
-  <div class="admin-price-row"><label>Bank Account (each additional)</label><input class="admin-price-input" id="bankAddlFee" type="text" placeholder="e.g. AED 5,000" value="AED 5,000" oninput="updateDisplay()" /></div>
+  <div class="admin-price-row"><label>Bank Account (first)</label><input class="admin-price-input" id="bankFirstFee" type="text" placeholder="e.g. AED 6,000" value="AED 6,000" oninput="updateDisplay()" /></div>
+  <div class="admin-price-row"><label>Bank Account (each additional)</label><input class="admin-price-input" id="bankAddlFee" type="text" placeholder="e.g. AED 3,000" value="AED 3,000" oninput="updateDisplay()" /></div>
 
   <div class="admin-row-label" style="margin-top:8px;">Hourly administrative fees:</div>
   <div class="admin-price-row"><label>Standard Rate / hr</label><input class="admin-price-input" id="hrStd" type="text" placeholder="e.g. AED 750" value="AED 750" oninput="updateDisplay()" /></div>
@@ -276,8 +276,8 @@
       <div class="fee-row"><span class="fee-label">SIM Card</span><span class="fee-value" id="disp-simFee">—</span></div>
       <div class="fee-row"><span class="fee-label">Email Domain</span><span class="fee-value" id="disp-emailFee">—</span></div>
       <div class="fee-row"><span class="fee-label">DLD Registration</span><span class="fee-value" id="disp-dldFee">—</span></div>
-      <div class="fee-total"><span>Foundation Setup Fee</span><span id="dispFoundTotal">—</span></div>
       <div class="fee-row"><span class="fee-label">Yearly Administrative Cost</span><span class="fee-value" id="disp-adminYearFee">—</span></div>
+      <div class="fee-total"><span>Foundation Setup Fee</span><span id="dispFoundTotal">—</span></div>
       <div class="fee-total" style="background:#f5f5f5;color:#666;"><span>Foundation Renewal Fee (annual)</span><span id="dispFoundRenewal">—</span></div>
       <div class="spv-row">
         <label>SPVs under foundation:</label>
@@ -402,10 +402,15 @@
       </div>
     </div>
     <div class="tot-wrap">
-      <h4>Total Payable</h4>
+      <h4>Total Payable: Setup Costs</h4>
       <table class="tot-table">
         <thead><tr><th>Item</th><th style="text-align:right;">Amount</th></tr></thead>
         <tbody id="totalsBody"></tbody>
+      </table>
+      <h4 style="margin-top:22px;">Annual Renewal Costs (Year 1 onwards)</h4>
+      <table class="tot-table">
+        <thead><tr><th>Item</th><th style="text-align:right;">Amount</th></tr></thead>
+        <tbody id="renewalBody"></tbody>
         <tfoot style="display:none;"><tr><td>Grand Total (excl. hourly fees)</td><td class="val" id="grandTotal">—</td></tr></tfoot>
       </table>
     </div>
@@ -488,9 +493,45 @@
   function extrasRows(){ return setupExtras.filter(x=>parseFee(x.id)).map(x=>`<tr><td>${x.label}</td><td class="val">${fmtWithCurrency(parseFee(x.id), getCurrency(x.id))}</td></tr>`).join(''); }
 
   // Totals take the currency of the fees that make them up (first fee entered), rather than the foundation fee alone
-  const SETUP_IDS=['foundFee','spvFee','d4Fee','ctFee','phoneFee','simFee','emailFee','dldFee','cm1Fee','cm2Fee','dirFee','bankFirstFee'];
+  const SETUP_IDS=['foundFee','spvFee','d4Fee','ctFee','phoneFee','simFee','emailFee','dldFee','adminYearFee','cm1Fee','cm2Fee','dirFee','bankFirstFee'];
   const RENEW_IDS=['foundRenewal','spvRenewal','d4Renewal','adminYearFee','cm1Fee','dirFee'];
   function totalCcy(ids){ for(const id of ids){ if(parseFee(id)) return getCurrency(id); } return 'AED'; }
+
+  // Full fee schedule. Setup costs include every fee; renewal costs exclude
+  // Corporate Tax Registration, Cellphone, DLD Registration and bank accounts.
+  function computeFees(){
+    const n=parseFee, c=getCurrency, f=fmtWithCurrency;
+    const spvN=parseInt(document.getElementById('spvCount').value)||0;
+    const dirN=parseInt(document.getElementById('dirCount').value)||1;
+    const bankN=bankCount();
+    const setup=[], renewal=[];
+    const add=(arr,label,amt,ccy)=>{ if(amt) arr.push({label,amt,ccy}); };
+    add(setup,'Foundation Setup',n('foundFee'),c('foundFee'));
+    if(spvN) add(setup,`SPV Setup (${spvN} × ${f(n('spvFee'),c('spvFee'))})`,n('spvFee')*spvN,c('spvFee'));
+    add(setup,'D4 Advisory Fee (inc. 5% tax)',n('d4Fee')*1.05,c('d4Fee'));
+    if(n('ctFee')) add(setup,`Corporate Tax Registration (${ctCount()} × ${f(n('ctFee'),c('ctFee'))}) (inc. 5% VAT)`,ctTotal()*1.05,c('ctFee'));
+    setupExtras.forEach(x=>add(setup,x.label,n(x.id),c(x.id)));
+    add(setup,'Yearly Administrative Cost',n('adminYearFee'),c('adminYearFee'));
+    if(addlState.cm1) add(setup,'First Council Member (inc. 5% tax)',n('cm1Fee')*1.05,c('cm1Fee'));
+    if(addlState.cm2) add(setup,'Second Council Member (inc. 5% tax)',n('cm2Fee')*1.05,c('cm2Fee'));
+    if(addlState.dir&&n('dirFee')) add(setup,`Directors (${dirN} × ${f(n('dirFee'),c('dirFee'))}) (inc. 5% tax)`,n('dirFee')*dirN*1.05,c('dirFee'));
+    if(addlState.bank) add(setup,`Bank Account Opening (${bankN} account${bankN>1?'s':''}) (inc. 5% tax)`,bankTotal()*1.05,c('bankFirstFee'));
+
+    add(renewal,'Foundation Renewal',n('foundRenewal'),c('foundRenewal'));
+    if(spvN&&n('spvRenewal')) add(renewal,`SPV Annual Fee (${spvN} × ${f(n('spvRenewal'),c('spvRenewal'))})`,n('spvRenewal')*spvN,c('spvRenewal'));
+    add(renewal,'D4 Annual Fee (inc. 5% tax)',n('d4Renewal')*1.05,c('d4Renewal'));
+    add(renewal,'SIM Card',n('simFee'),c('simFee'));
+    add(renewal,'Email Domain',n('emailFee'),c('emailFee'));
+    add(renewal,'Yearly Administrative Cost',n('adminYearFee'),c('adminYearFee'));
+    if(addlState.cm1) add(renewal,'First Council Member (inc. 5% tax)',n('cm1Fee')*1.05,c('cm1Fee'));
+    if(addlState.cm2) add(renewal,'Second Council Member (inc. 5% tax)',n('cm2Fee')*1.05,c('cm2Fee'));
+    if(addlState.dir&&n('dirFee')) add(renewal,`Directors (${dirN} × ${f(n('dirFee'),c('dirFee'))}) (inc. 5% tax)`,n('dirFee')*dirN*1.05,c('dirFee'));
+
+    const sum=arr=>arr.reduce((t,x)=>t+x.amt,0);
+    const ccyOf=arr=>arr.length?arr[0].ccy:'AED';
+    return {setup,renewal,setupTotal:sum(setup),renewTotal:sum(renewal),setupCcy:ccyOf(setup),renewCcy:ccyOf(renewal)};
+  }
+  function feeRowsHTML(items){ return items.map(x=>`<tr><td>${x.label}</td><td class="val">${fmtWithCurrency(x.amt,x.ccy)}</td></tr>`).join(''); }
 
   // Banking fees: first account at the first-account rate, each thereafter at the additional rate
   function bankCount(){ return parseInt(document.getElementById('bankCount').value)||1; }
@@ -551,7 +592,7 @@
       : 'Corporate Tax Registration (+ 5% VAT)';
     document.getElementById('dispCt').textContent = ctPer?fmtWithCurrency(ctWithVat, ctCcy):'—';
     setupExtras.forEach(x=>{ const v=parseFee(x.id); document.getElementById('disp-'+x.id).textContent = v?fmtWithCurrency(v, getCurrency(x.id)):'—'; });
-    const extras=extrasTotal();
+    const extras=extrasTotal()+parseFee('adminYearFee');
     document.getElementById('dispFoundTotal').textContent = (foundFee||spvTotal||d4Fee||ctPer||extras)?fmtWithCurrency((foundFee+spvTotal+d4Fee+d4Tax+ctWithVat+extras), totalCcy(SETUP_IDS)):'—';
 
     // Foundation renewal fees (tax included)
@@ -595,81 +636,12 @@
   }
 
   function updateTotals() {
-    // Setup fees (foundation and SPV already include tax)
-    const foundFee=parseFee('foundFee'), spvPer=parseFee('spvFee');
-    const spvCount=parseInt(document.getElementById('spvCount').value)||0;
-    const spvTotal=spvPer*spvCount;
-    const foundTotal=foundFee+spvTotal;
-    const foundCurrency=getCurrency('foundFee'), spvCurrency=getCurrency('spvFee');
-
-    // D4 Advisory fees (5% tax applied)
-    const d4Fee=parseFee('d4Fee'), d4Currency=getCurrency('d4Fee');
-    const d4Tax=d4Fee*0.05;
-    const d4Total=d4Fee+d4Tax;
-
-    // Corporate Tax Registration (mandatory, 5% VAT applied)
-    const ctPer=parseFee('ctFee'), ctN=ctCount(), ctCcy=getCurrency('ctFee'), ctWithVat=ctTotal()*1.05;
-
-    // Optional services (5% tax applied)
-    const cm1=parseFee('cm1Fee'), cm2=parseFee('cm2Fee'), cm1Currency=getCurrency('cm1Fee'), cm2Currency=getCurrency('cm2Fee');
-    const dirPer=parseFee('dirFee'), dirCurrency=getCurrency('dirFee');
-    const dirCount=parseInt(document.getElementById('dirCount').value)||1;
-    const cm1Total=addlState.cm1?(cm1*1.05):0;
-    const cm2Total=addlState.cm2?(cm2*1.05):0;
-    const dirTotal=dirPer*dirCount;
-    const dirTotalWithTax=addlState.dir?(dirTotal*1.05):0;
-    const bankSetup=bankTotal(), bankCcy=getCurrency('bankFirstFee'), bankN=bankCount();
-    const bankTotalWithTax=addlState.bank?(bankSetup*1.05):0;
-    const optionalTotal=cm1Total+cm2Total+dirTotalWithTax+bankTotalWithTax;
-
-    const extras=extrasTotal();
-    const grand=foundTotal+d4Total+ctWithVat+extras+optionalTotal;
-
-    // Renewal fees
-    const foundRenewal=parseFee('foundRenewal'), foundRenCurrency=getCurrency('foundRenewal');
-    const spvRenPer=parseFee('spvRenewal'), spvRenCurrency=getCurrency('spvRenewal'), spvRenTotal=spvRenPer*spvCount;
-    const foundRenTotal=foundRenewal+spvRenTotal;
-    const d4Renewal=parseFee('d4Renewal'), d4RenCurrency=getCurrency('d4Renewal');
-    const d4RenTax=d4Renewal*0.05;
-    const d4RenTotal=d4Renewal+d4RenTax;
-    const cmRen=parseFee('cm1Fee'), cmRenCurrency=getCurrency('cm1Fee');
-    const dirRen=parseFee('dirFee'), dirRenCurrency=getCurrency('dirFee');
-    const cm1RenTotal=addlState.cm1?(cmRen*1.05):0;
-    const cm2RenTotal=addlState.cm2?(cmRen*1.05):0;
-    const dirRenTotalWithTax=addlState.dir?(dirRen*dirCount*1.05):0;
-    const optRenTotal=cm1RenTotal+cm2RenTotal+dirRenTotalWithTax;
-    const adminYear=parseFee('adminYearFee'), adminYearCcy=getCurrency('adminYearFee');
-    const totalRenewal=foundRenTotal+d4RenTotal+adminYear+optRenTotal;
-
-    // Setup fees table
-    let rows='';
-    rows+=`<tr style="font-weight:600;border-bottom:2px solid var(--rule);color:var(--text-dark);"><td colspan="2">ONE-TIME SETUP FEES</td></tr>`;
-    if(foundFee) rows+=`<tr><td>Foundation Setup</td><td class="val">${fmtWithCurrency(foundFee, foundCurrency)}</td></tr>`;
-    if(spvPer&&spvCount>0) rows+=`<tr><td>SPV Setup (${spvCount} × ${fmtWithCurrency(spvPer, spvCurrency)})</td><td class="val">${fmtWithCurrency(spvTotal, spvCurrency)}</td></tr>`;
-    if(d4Fee) rows+=`<tr><td>D4 Advisory Fee (inc. 5% tax)</td><td class="val">${fmtWithCurrency(d4Total, d4Currency)}</td></tr>`;
-    if(ctPer) rows+=`<tr><td>Corporate Tax Registration (${ctN} × ${fmtWithCurrency(ctPer, ctCcy)}) (inc. 5% VAT)</td><td class="val">${fmtWithCurrency(ctWithVat, ctCcy)}</td></tr>`;
-    rows+=extrasRows();
-    if(addlState.cm1&&cm1) rows+=`<tr><td>First Council Member Setup (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm1Total, cm1Currency)}</td></tr>`;
-    if(addlState.cm2&&cm2) rows+=`<tr><td>Second Council Member Setup (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm2Total, cm2Currency)}</td></tr>`;
-    if(addlState.dir) rows+=`<tr><td>Directors Setup (${dirCount} × ${fmtWithCurrency(dirPer, dirCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirTotalWithTax, dirCurrency)}</td></tr>`;
-    if(addlState.bank&&bankSetup) rows+=`<tr><td>Bank Account Opening (${bankN} account${bankN>1?'s':''}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(bankTotalWithTax, bankCcy)}</td></tr>`;
-    if(grand>0) rows+=`<tr class="sub-r"><td>TOTAL ONE-TIME FEES</td><td class="val">${fmtWithCurrency(grand, totalCcy(SETUP_IDS))}</td></tr>`;
-
-    // Renewal fees table
-    if(totalRenewal>0) {
-      rows+=`<tr style="height:18px;"></tr>`;
-      rows+=`<tr style="font-weight:600;border-bottom:2px solid var(--rule);color:var(--text-dark);"><td colspan="2">ANNUAL RENEWAL FEES (Year 1 onwards)</td></tr>`;
-      if(foundRenewal) rows+=`<tr><td>Foundation Renewal</td><td class="val">${fmtWithCurrency(foundRenewal, foundRenCurrency)}</td></tr>`;
-      if(spvRenPer&&spvCount>0) rows+=`<tr><td>SPV Annual Fee (${spvCount} × ${fmtWithCurrency(spvRenPer, spvRenCurrency)})</td><td class="val">${fmtWithCurrency(spvRenTotal, spvRenCurrency)}</td></tr>`;
-      if(d4Renewal) rows+=`<tr><td>D4 Annual Fee (inc. 5% tax)</td><td class="val">${fmtWithCurrency(d4RenTotal, d4RenCurrency)}</td></tr>`;
-      if(adminYear) rows+=`<tr><td>Yearly Administrative Cost</td><td class="val">${fmtWithCurrency(adminYear, adminYearCcy)}</td></tr>`;
-      if(addlState.cm1&&cmRen) rows+=`<tr><td>First Council Member Renewal (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm1RenTotal, cmRenCurrency)}</td></tr>`;
-      if(addlState.cm2&&cmRen) rows+=`<tr><td>Second Council Member Renewal (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm2RenTotal, cmRenCurrency)}</td></tr>`;
-      if(addlState.dir) rows+=`<tr><td>Directors Renewal (${dirCount} × ${fmtWithCurrency(dirRen, dirRenCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirRenTotalWithTax, dirRenCurrency)}</td></tr>`;
-      rows+=`<tr class="sub-r"><td>TOTAL ANNUAL RENEWAL FEES</td><td class="val">${fmtWithCurrency(totalRenewal, totalCcy(RENEW_IDS))}</td></tr>`;
-    }
-
-    document.getElementById('totalsBody').innerHTML=rows||'<tr><td colspan="2" style="color:var(--text-light);font-style:italic;font-size:11px;">Fees to be confirmed by your advisor.</td></tr>';
+    const fees=computeFees();
+    const empty='<tr><td colspan="2" style="color:var(--text-light);font-style:italic;font-size:11px;">Fees to be confirmed by your advisor.</td></tr>';
+    document.getElementById('totalsBody').innerHTML = fees.setup.length
+      ? feeRowsHTML(fees.setup)+`<tr class="sub-r"><td>TOTAL SETUP COSTS</td><td class="val">${fmtWithCurrency(fees.setupTotal, fees.setupCcy)}</td></tr>` : empty;
+    document.getElementById('renewalBody').innerHTML = fees.renewal.length
+      ? feeRowsHTML(fees.renewal)+`<tr class="sub-r"><td>TOTAL ANNUAL RENEWAL COSTS</td><td class="val">${fmtWithCurrency(fees.renewTotal, fees.renewCcy)}</td></tr>` : empty;
   }
 
   function updateBtn() {
@@ -787,36 +759,17 @@
   }
 
   function buildSummary(clientName,sigEmail,signedDate){
-    const f=(n,id)=>fmtWithCurrency(n,id?getCurrency(id):totalCcy(SETUP_IDS));
-    const foundFee=parseFee('foundFee');
-    const spvPer=parseFee('spvFee'), spvCount=parseInt(document.getElementById('spvCount').value)||0;
-    const d4Fee=parseFee('d4Fee'), d4Tax=d4Fee*0.05;
-    const ctWithVat=ctTotal()*1.05;
-    const cm1=parseFee('cm1Fee'),cm2=parseFee('cm2Fee'),dirPer=parseFee('dirFee');
-    const dirCount=parseInt(document.getElementById('dirCount').value)||1;
-
-    let subtotal=foundFee+(spvPer*spvCount)+d4Fee+d4Tax+ctWithVat+extrasTotal();
-    if(addlState.cm1) subtotal+=(cm1*1.05);
-    if(addlState.cm2) subtotal+=(cm2*1.05);
-    if(addlState.dir) subtotal+=(dirPer*dirCount*1.05);
-    if(addlState.bank) subtotal+=(bankTotal()*1.05);
-
+    const fees=computeFees();
+    const line=x=>'  '+x.label+': '+fmtWithCurrency(x.amt,x.ccy);
     return ['FOUNDATION SETUP ENGAGEMENT','='.repeat(32),'',
       'Client: '+clientName,'Email: '+(sigEmail||'Not provided'),'Date: '+signedDate,'',
       'Foundation: '+(document.getElementById('adminDetails').value.trim()||'Not specified'),
-      'SPVs: '+spvCount,'',
-      'Fees:',foundFee?'  Foundation: '+f(foundFee,'foundFee'):'',
-      spvPer&&spvCount?'  SPV Setup ('+spvCount+' × '+f(spvPer,'spvFee')+'): '+f(spvPer*spvCount,'spvFee'):'',
-      d4Fee?'  D4 Fee: '+f(d4Fee,'d4Fee')+' + Tax: '+f(d4Tax,'d4Fee'):'',
-      parseFee('ctFee')?'  Corporate Tax Registration x'+ctCount()+' (inc. 5% VAT): '+f(ctWithVat,'ctFee'):'',
-      ...setupExtras.filter(x=>parseFee(x.id)).map(x=>'  '+x.label+': '+f(parseFee(x.id),x.id)),
-      addlState.cm1?'  Council Member 1 (inc. 5% tax): '+f(cm1*1.05,'cm1Fee'):'',
-      addlState.cm2?'  Council Member 2 (inc. 5% tax): '+f(cm2*1.05,'cm2Fee'):'',
-      addlState.dir?'  Directors '+dirCount+' (inc. 5% tax): '+f(dirPer*dirCount*1.05,'dirFee'):'',
-      addlState.bank?'  Bank Accounts '+bankCount()+' (inc. 5% tax): '+f(bankTotal()*1.05,'bankFirstFee'):'',
-      '','  Grand Total: '+f(subtotal),
-      parseFee('adminYearFee')?'  Yearly Administrative Cost: '+f(parseFee('adminYearFee'),'adminYearFee')+' per year':''
-    ].filter(l=>l!=='').join('\n');
+      'SPVs: '+(parseInt(document.getElementById('spvCount').value)||0),'',
+      'Setup Costs:',...fees.setup.map(line),
+      '  Total Setup Costs: '+fmtWithCurrency(fees.setupTotal,fees.setupCcy),'',
+      'Annual Renewal Costs (Year 1 onwards):',...fees.renewal.map(line),
+      '  Total Annual Renewal Costs: '+fmtWithCurrency(fees.renewTotal,fees.renewCcy)
+    ].join('\n');
   }
 
   function buildEngagementHTML(clientName,sigName,sigEmail,signedDate,sigDataURL){
@@ -836,28 +789,9 @@
     const stampEl=document.querySelector('.d4-sig-box img');
     const stampSrc=stampEl?stampEl.src:'';
 
-    const spvTotal=spvPer*spvN;
-    const d4Tax=d4*0.05;
-    const ctPer=parseFee('ctFee'), ctN=ctCount(), ctCcy=getCurrency('ctFee'), ctWithVat=ctTotal()*1.05;
-    let subtotal=csp+spvTotal+d4+d4Tax+ctWithVat+extrasTotal();
-    const totCcy=totalCcy(SETUP_IDS);
-    if(addlState.cm1) subtotal+=cm1*1.05;
-    if(addlState.cm2) subtotal+=cm2*1.05;
-    if(addlState.dir) subtotal+=dirTotal*1.05;
-    if(addlState.bank) subtotal+=bankSetup*1.05;
-    const grand=subtotal;
-
-    const feeRows=`
-      ${csp?`<tr><td>Foundation Setup, CSP Fee</td><td class="val">${fmtWithCurrency(csp, cspCurrency)}</td></tr>`:''}
-      ${spvPer&&spvN>0?`<tr><td>SPV Setup (${spvN} × ${fmtWithCurrency(spvPer, spvCurrency)})</td><td class="val">${fmtWithCurrency(spvTotal, spvCurrency)}</td></tr>`:''}
-      ${d4?`<tr><td>D4 Advisory Fee (inc. 5% tax)</td><td class="val">${fmtWithCurrency(d4+d4Tax, d4Currency)}</td></tr>`:''}
-      ${ctPer?`<tr><td>Corporate Tax Registration (${ctN} × ${fmtWithCurrency(ctPer, ctCcy)}) (inc. 5% VAT)</td><td class="val">${fmtWithCurrency(ctWithVat, ctCcy)}</td></tr>`:''}
-      ${extrasRows()}
-      ${addlState.cm1&&cm1?`<tr><td>First Council Member (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm1*1.05, cm1Currency)}</td></tr>`:''}
-      ${addlState.cm2&&cm2?`<tr><td>Second Council Member (inc. 5% tax)</td><td class="val">${fmtWithCurrency(cm2*1.05, cm2Currency)}</td></tr>`:''}
-      ${addlState.dir&&dirPer?`<tr><td>Directors (${dirCount} × ${fmtWithCurrency(dirPer, dirCurrency)}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(dirTotal*1.05, dirCurrency)}</td></tr>`:''}
-      ${addlState.bank&&bankSetup?`<tr><td>Bank Account Opening (${bankN} account${bankN>1?'s':''}) (inc. 5% tax)</td><td class="val">${fmtWithCurrency(bankSetup*1.05, bankCcy)}</td></tr>`:''}
-      ${subtotal>0?`<tr class="sub-r"><td>Subtotal</td><td class="val">${fmtWithCurrency(subtotal, totCcy)}</td></tr>`:''}`;
+    const fees=computeFees();
+    const feeRows=feeRowsHTML(fees.setup)+(fees.setup.length?`<tr class="sub-r"><td>Total Setup Costs</td><td class="val">${fmtWithCurrency(fees.setupTotal, fees.setupCcy)}</td></tr>`:'');
+    const renewRows=feeRowsHTML(fees.renewal);
 
     const sigImg=sigDataURL?`<img src="${sigDataURL}" style="height:60px;display:block;margin-top:4px;border-bottom:1px solid #E2DDD8;" />`:`<div style="height:50px;border-bottom:1px solid #E2DDD8;color:#7A7A7A;font-style:italic;font-size:11px;padding-top:14px;">No signature captured</div>`;
 
@@ -912,14 +846,22 @@
       </div>
       <div class="sec">
         <div class="sec-t">3. Total Payable (excl. hourly fees)</div>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#0F1B2D;margin-bottom:6px;">Setup Costs</p>
         <table>
           <thead><tr><th style="background:#0F1B2D;color:rgba(255,255,255,0.7);padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;text-align:left;">Item</th><th style="background:#0F1B2D;color:rgba(255,255,255,0.7);padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;text-align:right;">Amount</th></tr></thead>
           <tbody>
-            ${feeRows}
+            ${feeRowsHTML(fees.setup)}
           </tbody>
-          <tfoot><tr><td>Grand Total</td><td class="val">${fmtWithCurrency(grand, totCcy)}</td></tr></tfoot>
+          <tfoot><tr><td>Total Setup Costs</td><td class="val">${fmtWithCurrency(fees.setupTotal, fees.setupCcy)}</td></tr></tfoot>
         </table>
-        ${parseFee('adminYearFee')?`<table style="margin-top:14px;"><tr class="sub-r"><td colspan="2">ANNUAL FEES (Year 1 onwards)</td></tr><tr><td>Yearly Administrative Cost</td><td class="val">${fmtWithCurrency(parseFee('adminYearFee'), getCurrency('adminYearFee'))}</td></tr></table>`:''}
+        ${fees.renewal.length?`<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#0F1B2D;margin:18px 0 6px;">Annual Renewal Costs (Year 1 onwards)</p>
+        <table>
+          <thead><tr><th style="background:#0F1B2D;color:rgba(255,255,255,0.7);padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;text-align:left;">Item</th><th style="background:#0F1B2D;color:rgba(255,255,255,0.7);padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;text-align:right;">Amount</th></tr></thead>
+          <tbody>
+            ${renewRows}
+          </tbody>
+          <tfoot><tr><td>Total Annual Renewal Costs</td><td class="val">${fmtWithCurrency(fees.renewTotal, fees.renewCcy)}</td></tr></tfoot>
+        </table>`:''}
         ${notes?`<div class="notes-box"><strong style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#7A7A7A;display:block;margin-bottom:5px;">Notes</strong>${notes}</div>`:''}
       </div>
       <div class="acc">&#10003; Client has read, understood, and agreed to the terms of this engagement letter in full. All confirmations provided prior to submission.</div>
